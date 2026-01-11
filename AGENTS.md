@@ -456,7 +456,7 @@ This repository is focused and straightforward. Following these instructions wil
 - ✅ Include AI attribution in commits
 
 ### DON'T:
-- ❌ Modify base image building (wrong repo - see main Aurora repo)
+- ❌ Modify base image building (wrong repo)
 - ❌ Remove or edit working code unnecessarily
 - ❌ Skip validation steps
 - ❌ Build ISOs locally unless necessary
