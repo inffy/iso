@@ -124,7 +124,7 @@ The ISO is customized via `iso_files/configure_iso_anaconda-webui.sh`:
 The custom Aurora profile includes:
 
 - **Storage**: BTRFS with zstd:1 compression
-- **Partitioning**: 
+- **Partitioning**:
   - `/` (1 GiB min, 70 GiB max)
   - `/home` (500 MiB min, 50 GiB free)
   - `/var` (BTRFS)
