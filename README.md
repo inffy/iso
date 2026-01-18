@@ -197,7 +197,7 @@ To promote ISOs to production:
 **Note**: The promotion workflow uses `rclone sync`, which will:
 - Copy new files from test to production
 - Update existing files if changed
-- Remove files from production that don't exist in test
+- Remove ISO and CHECKSUM files from production that don't exist in test (subject to the rclone include filters)
 
 ## Contributing
 
