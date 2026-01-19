@@ -1,12 +1,31 @@
 ---
 name: Build Stable ISOs
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-iso-stable.yml"
+      - ".github/workflows/reusable-build-iso-anaconda.yml"
+      - "iso_files/**"
   workflow_dispatch:
+    inputs:
+      upload_artifacts:
+        description: 'Upload ISOs as job artifacts'
+        type: boolean
+        default: false
+      upload_r2:
+        description: 'Upload ISOs to Cloudflare R2'
+        type: boolean
+        default: true
   schedule:
-    - cron: "0 2 1 * *" # First day of each month at 2:00 AM UTC
+    - cron: "15 3 * * 2" # Push to testing bucket every week at 03:15 on Tuesdays - 2h after Aurora publishes weekly builds.
 
 jobs:
   build-iso-stable:
     name: Build Stable ISOs
     uses: ./.github/workflows/reusable-build-iso-anaconda.yml
     secrets: inherit
+    with:
+      upload_artifacts: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_artifacts || false }}
+      upload_r2: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_r2 || true }}
