@@ -1,7 +1,6 @@
 ---
 name: Reusable Build
 on:
-  merge_group:
   workflow_call:
     inputs:
       upload_artifacts:
