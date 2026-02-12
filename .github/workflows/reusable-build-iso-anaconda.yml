@@ -99,7 +99,7 @@ jobs:
           echo "output_directory=$OUTPUT_DIRECTORY" >> "${GITHUB_OUTPUT}"
 
       - name: Upload to Job Artifacts
-        if: github.event_name == 'pull_request'
+        if: inputs.upload_artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: ${{ steps.image_ref.outputs.artifact_format }}
@@ -107,11 +107,11 @@ jobs:
           path: ${{ steps.rename.outputs.output_directory }}
 
       - name: Install rclone
-        if: inputs.upload_r2 && github.event_name != 'pull_request'
+        if: inputs.upload_r2
         run: /home/linuxbrew/.linuxbrew/bin/brew install rclone
 
       - name: Upload to CloudFlare test bucket
-        if: inputs.upload_r2 && github.event_name != 'pull_request'
+        if: inputs.upload_r2
         shell: bash
         env:
           RCLONE_CONFIG_R2_TYPE: s3

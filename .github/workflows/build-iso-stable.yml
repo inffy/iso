@@ -8,6 +8,13 @@ on:
       - ".github/workflows/build-iso-stable.yml"
       - ".github/workflows/reusable-build-iso-anaconda.yml"
       - "iso_files/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-iso-stable.yml"
+      - ".github/workflows/reusable-build-iso-anaconda.yml"
+      - "iso_files/**"
   workflow_dispatch:
     inputs:
       upload_artifacts:
@@ -27,7 +34,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-iso-anaconda.yml
     secrets: inherit
     with:
-      # Only upload artifacts if manually requested
-      upload_artifacts: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_artifacts || false }}
-      # Upload to R2 if it's a scheduled run OR if manually requested
-      upload_r2: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.upload_r2) }}
+      # Upload artifacts only on PR or if manually requested
+      upload_artifacts: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts) }}
+      # Upload to R2 on push (merged PR), scheduled run, or if manually requested
+      upload_r2: ${{ github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.upload_r2) }}
