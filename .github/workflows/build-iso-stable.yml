@@ -28,7 +28,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-iso-anaconda.yml
     secrets: inherit
     with:
-      # Only upload artifacts if manually requested
-      upload_artifacts: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_artifacts || false }}
-      # Upload to R2 if it's a scheduled run OR if manually requested
-      upload_r2: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.upload_r2) }}
+      # Upload artifacts on PR checks or if manually requested
+      upload_artifacts: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts) }}
+      # Upload to R2 on merge_group, scheduled runs, or if manually requested
+      upload_r2: ${{ github.event_name == 'merge_group' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.upload_r2) }}
