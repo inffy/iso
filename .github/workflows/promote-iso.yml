@@ -2,8 +2,12 @@ name: Promote ISOs to Production
 on:
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: "GitHub release tag to promote (e.g., 26.02.1). Leave empty to auto-detect latest prerelease."
+        type: string
+        required: false
       dry_run:
-        description: 'Run in dry-run mode (preview changes without copying)'
+        description: "Run in dry-run mode (preview changes without copying)"
         required: false
         type: boolean
         default: true
@@ -24,7 +28,7 @@ jobs:
       RCLONE_CONFIG_R2_TEST_REGION: auto
       RCLONE_CONFIG_R2_TEST_ENDPOINT: ${{ secrets.AURORA_DL_TEST_R2_ENDPOINT }}
 
-     # Production Bucket Config (Destination)
+      # Production Bucket Config (Destination)
       RCLONE_CONFIG_R2_PROD_TYPE: s3
       RCLONE_CONFIG_R2_PROD_PROVIDER: Cloudflare
       RCLONE_CONFIG_R2_PROD_ACCESS_KEY_ID: ${{ secrets. AURORA_DL_R2_ACCESS_KEY_ID }}
@@ -46,8 +50,6 @@ jobs:
         run: |
           echo "Running in DRY RUN mode - no files will be copied"
           /home/linuxbrew/.linuxbrew/bin/rclone sync R2_TEST:aurora-dl-test R2_PROD:aurora-dl \
-            --include "*.iso" \
-            --include "*.iso-CHECKSUM" \
             --dry-run \
             --verbose
 
@@ -56,8 +58,6 @@ jobs:
         run: |
           echo "Promoting ISOs from Test to Production"
           /home/linuxbrew/.linuxbrew/bin/rclone sync R2_TEST:aurora-dl-test R2_PROD:aurora-dl \
-            --include "*.iso" \
-            --include "*.iso-CHECKSUM" \
             --verbose \
             --progress
 
@@ -65,4 +65,72 @@ jobs:
         if: inputs.dry_run == false
         run: |
           echo "Files in Production bucket after promotion:"
-          /home/linuxbrew/.linuxbrew/bin/rclone ls R2_PROD:aurora-dl --include "*.iso" --include "*.iso-CHECKSUM"
+          /home/linuxbrew/.linuxbrew/bin/rclone ls R2_PROD:aurora-dl --include "*.iso" --include "*.iso-CHECKSUM" --include "*.iso.torrent" --include "*.iso.torrent-CHECKSUM"
+
+  promote-release:
+    name: Promote GitHub Release
+    needs: promote
+    if: inputs.dry_run == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+
+      - name: Determine release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eoux pipefail
+          if [ -n "${{ inputs.release_tag }}" ]; then
+            TAG="${{ inputs.release_tag }}"
+          else
+            # Auto-detect latest prerelease
+            TAG=$(gh release list --limit 20 --json tagName,isPrerelease --jq '.[] | select(.isPrerelease == true) | .tagName' | head -n1)
+            if [ -z "$TAG" ]; then
+              echo "No prerelease found to promote"
+              exit 1
+            fi
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Promoting release: ${TAG}"
+
+      - name: Update release to full release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -eoux pipefail
+
+          # Edit release to remove prerelease flag and mark as latest
+          gh release edit "${TAG}" \
+            --prerelease=false \
+            --latest \
+            --title "Aurora ISOs ${TAG}"
+
+          # Update release notes
+          gh release edit "${TAG}" --notes "$(cat <<'EOF'
+          ## Aurora ISO Torrents
+
+          ### How to Download
+
+          1. Download a `.torrent` file below
+          2. Open with a BitTorrent client (qBittorrent, Transmission, etc.)
+          3. Torrents include web seeds -- downloads work immediately
+
+          ### Direct Downloads
+
+          ISOs are also available at https://getaurora.dev
+
+          ### Verify
+
+          \`\`\`bash
+          sha256sum -c <filename>.torrent-CHECKSUM
+          \`\`\`
+          EOF
+          )"
+
+          echo "Successfully promoted release ${TAG} to production"
