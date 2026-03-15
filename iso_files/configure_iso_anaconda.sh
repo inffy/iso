@@ -35,7 +35,6 @@ rm -f fedora-logos*.rpm
 
 # Configure Anaconda
 
-# Install Anaconda WebUI
 SPECS=(
     "libblockdev-btrfs"
     "libblockdev-lvm"
