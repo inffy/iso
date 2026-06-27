@@ -1,5 +1,5 @@
-set unstable
-set lists
+set unstable := true
+set lists := true
 
 repo_organization := "ublue-os"
 common_image := "ghcr.io/get-aurora-dev/common:latest"
