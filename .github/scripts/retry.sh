@@ -11,6 +11,7 @@ retry() {
     tries="${1}"
     sleep="${2}"
     shift 2
+    r=1
     for i in $(seq 1 "${tries}"); do
         if [[ ${i} -gt 1 ]]; then
             sleep "${sleep}"

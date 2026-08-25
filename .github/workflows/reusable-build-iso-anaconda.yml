@@ -181,7 +181,6 @@ jobs:
       - name: Sign ISO OCI Artifact
         if: inputs.upload_artifacts
         env:
-          COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
           ORAS_REPOSITORY: ghcr.io/${{ github.repository_owner }}/iso-artifacts
           DIGEST: ${{ steps.oras-push.outputs.digest }}
