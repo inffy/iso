@@ -146,8 +146,26 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
+          set -euo pipefail
+          retry() {
+              if [[ "${#}" -lt 3 ]]; then
+                  echo "retry usage: <number of tries> <time between retries> <command> ..."
+                  return 1
+              fi
+              tries="${1}"
+              sleep="${2}"
+              shift 2
+              for i in $(seq 1 ${tries}); do
+                  if [[ ${i} -gt 1 ]]; then
+                      sleep ${sleep}
+                  fi
+                  "${@}" && r=0 && break || r=$?
+              done
+              return $r
+          }
+
           # cosign gets credentials from docker
-          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          retry 5 60 bash -c 'echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin'
 
       - name: Login to GitHub Container Registry with ORAS
         if: inputs.upload_artifacts
@@ -155,7 +173,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
-          oras login ghcr.io -u "${GITHUB_ACTOR}" -p "${GITHUB_TOKEN}"
+          set -euo pipefail
+          retry() {
+              if [[ "${#}" -lt 3 ]]; then
+                  echo "retry usage: <number of tries> <time between retries> <command> ..."
+                  return 1
+              fi
+              tries="${1}"
+              sleep="${2}"
+              shift 2
+              for i in $(seq 1 ${tries}); do
+                  if [[ ${i} -gt 1 ]]; then
+                      sleep ${sleep}
+                  fi
+                  "${@}" && r=0 && break || r=$?
+              done
+              return $r
+          }
+
+          retry 5 60 bash -c 'echo "${GITHUB_TOKEN}" | oras login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin'
 
       - name: Push ISO to GitHub Container Registry with ORAS
         id: oras-push
