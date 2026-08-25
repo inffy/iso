@@ -140,6 +140,15 @@ jobs:
           (cd "${OUTPUT_DIRECTORY}" && sha256sum "${OUTPUT_NAME}.iso" | tee "${OUTPUT_NAME}.iso-CHECKSUM")
           echo "output_directory=$OUTPUT_DIRECTORY" >> "${GITHUB_OUTPUT}"
 
+      - name: Login to GitHub Container Registry
+        if: inputs.upload_artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          # cosign gets credentials from docker
+          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+
       - name: Login to GitHub Container Registry with ORAS
         if: inputs.upload_artifacts
         env:
@@ -175,7 +184,10 @@ jobs:
           ORAS_REPOSITORY: ghcr.io/${{ github.repository_owner }}/iso-artifacts
           DIGEST: ${{ steps.oras-push.outputs.digest }}
         run: |
-          cosign sign -y --use-signing-config=false --new-bundle-format=false --key env://COSIGN_PRIVATE_KEY "${ORAS_REPOSITORY}@${DIGEST}"
+          # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
+          # https://github.com/containers/container-libs/issues/388
+          # https://github.com/coreos/rpm-ostree/issues/5509
+          cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${ORAS_REPOSITORY}@${DIGEST}"
 
       - name: Upload ISO to Job Artifacts
         if: inputs.upload_artifacts
