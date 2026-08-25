@@ -58,7 +58,7 @@ jobs:
         if: inputs.upload_artifacts
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
-          cosign-release: 'v4.1.2'
+          cosign-release: 'v3.1.3'
 
       - name: Install ORAS
         if: inputs.upload_artifacts
@@ -175,7 +175,7 @@ jobs:
           ORAS_REPOSITORY: ghcr.io/${{ github.repository_owner }}/iso-artifacts
           DIGEST: ${{ steps.oras-push.outputs.digest }}
         run: |
-          cosign sign -y --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${ORAS_REPOSITORY}@${DIGEST}"
+          cosign sign -y --use-signing-config=false --new-bundle-format=false --key env://COSIGN_PRIVATE_KEY "${ORAS_REPOSITORY}@${DIGEST}"
 
       - name: Upload ISO to Job Artifacts
         if: inputs.upload_artifacts
