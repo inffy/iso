@@ -60,7 +60,9 @@ dnf install -y \
     anaconda-webui \
     libblockdev-btrfs \
     libblockdev-lvm \
-    libblockdev-dm
+    libblockdev-dm \
+    pciutils \
+    conky
 
 kernel=$(find /usr/lib/modules -maxdepth 1 -type d -printf '%P\n' | grep . | head -1)
 DRACUT_NO_XATTR=1 dracut -v --force --zstd --reproducible --no-hostonly \
