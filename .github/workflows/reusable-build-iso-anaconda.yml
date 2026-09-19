@@ -107,16 +107,20 @@ jobs:
           CONTAINER_IMAGE_NAME="aurora-live-${FLAVOR}:${IMAGE_VERSION}"
           FULL_BASE_IMAGE="${BASE_IMAGE_REF}:${IMAGE_VERSION}"
 
+          if ! command -v fuse-overlayfs &>/dev/null; then
+            sudo apt-get update && sudo apt-get install -y fuse-overlayfs
+          fi
+
           container=$(sudo buildah from "${FULL_BASE_IMAGE}")
           mountpoint=$(sudo buildah mount "$container")
 
           # Copy base image directly on host into /usr/lib/containers/storage
-          # Running on the host avoids user namespace restrictions and lchown errors
+          # fuse-overlayfs allows overlay driver operations on top of the container's overlayfs mountpoint
           sudo mkdir -p "${mountpoint}/usr/lib/containers/storage" /run/containers/storage
           sudo skopeo copy \
             --remove-signatures \
             "containers-storage:${FULL_BASE_IMAGE}" \
-            "containers-storage:[overlay@${mountpoint}/usr/lib/containers/storage+/run/containers/storage]${FULL_BASE_IMAGE}"
+            "containers-storage:[overlay@${mountpoint}/usr/lib/containers/storage+/run/containers/storage:mount_program=$(command -v fuse-overlayfs)]${FULL_BASE_IMAGE}"
 
           # Copy build files into container
           sudo cp -r iso_files "${mountpoint}/src/iso_files"
