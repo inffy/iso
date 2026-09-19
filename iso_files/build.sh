@@ -24,31 +24,40 @@ if [[ -f "$SCRIPT_DIR/flatpaks.list" ]]; then
     flatpak list --columns=runtime,app
 fi
 
-# Configure podman temporarily to write to /usr/lib/containers/storage
+# Populate /usr/lib/containers/storage with the target image
 # This avoids storing the huge base image in /var/lib/containers/storage
 # (which is empty/tmpfs in the booted live environment and would exhaust RAM)
-mkdir -p /etc/containers
-cat >/etc/containers/storage.conf <<'EOF'
-[storage]
-driver = "overlay"
-runroot = "/run/containers/storage"
-graphroot = "/usr/lib/containers/storage"
-EOF
-
-# Pull the container image to be installed
 if [[ -n "${BASE_IMAGE:-}" ]]; then
-    podman pull "${BASE_IMAGE}"
+    TARGET_IMAGE="${BASE_IMAGE}"
 else
     # Fallback to reading image-info.json if BASE_IMAGE not set
     IMAGE_INFO="$(cat /usr/share/ublue-os/image-info.json)"
     IMAGE_TAG="$(jq -c -r '."image-tag"' <<<"$IMAGE_INFO")"
     IMAGE_REF="$(jq -c -r '."image-ref"' <<<"$IMAGE_INFO")"
     IMAGE_REF="${IMAGE_REF##*://}"
-    podman pull "${IMAGE_REF}:${IMAGE_TAG}"
+    TARGET_IMAGE="${IMAGE_REF}:${IMAGE_TAG}"
 fi
 
-# Clean up the temporary storage configuration so that runtime podman uses the default
-rm -f /etc/containers/storage.conf
+if [[ -d /run/host-containers-storage/overlay || -d /run/host-containers-storage/vfs ]]; then
+    echo "Copying ${TARGET_IMAGE} locally from host storage into /usr/lib/containers/storage..."
+    mkdir -p /run/host-containers-storage-run /run/containers/storage /usr/lib/containers/storage
+    skopeo copy \
+        "containers-storage:[overlay@/run/host-containers-storage+/run/host-containers-storage-run]${TARGET_IMAGE}" \
+        "containers-storage:[overlay@/usr/lib/containers/storage+/run/containers/storage]${TARGET_IMAGE}"
+    rm -rf /run/host-containers-storage-run
+else
+    # Fallback to network pull if host storage was not mounted
+    echo "Host storage not mounted; falling back to podman pull over network..."
+    mkdir -p /etc/containers
+    cat >/etc/containers/storage.conf <<'EOF'
+[storage]
+driver = "overlay"
+runroot = "/run/containers/storage"
+graphroot = "/usr/lib/containers/storage"
+EOF
+    podman pull "${TARGET_IMAGE}"
+    rm -f /etc/containers/storage.conf
+fi
 
 # Install required packages
 dnf install -y \
