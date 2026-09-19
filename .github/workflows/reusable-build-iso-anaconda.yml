@@ -123,7 +123,8 @@ jobs:
             "containers-storage:[overlay@${mountpoint}/usr/lib/containers/storage+/run/containers/storage:mount_program=$(command -v fuse-overlayfs)]${FULL_BASE_IMAGE}"
 
           # Copy build files into container
-          sudo cp -r iso_files "${mountpoint}/src/iso_files"
+          sudo mkdir -p "${mountpoint}/src/iso_files"
+          sudo cp -r iso_files/. "${mountpoint}/src/iso_files/"
 
           # Execute build script inside container
           sudo mkdir -p /var/tmp/libdnf5-cache
