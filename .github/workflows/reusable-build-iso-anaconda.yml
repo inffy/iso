@@ -130,10 +130,11 @@ jobs:
           sudo mkdir -p /var/tmp/libdnf5-cache
           sudo buildah config --env BASE_IMAGE="${FULL_BASE_IMAGE}" "$container"
           sudo buildah run \
-            --cap-add sys_admin \
+            --cap-add CAP_SYS_ADMIN \
             -v /var/tmp/libdnf5-cache:/var/tmp/libdnf5 \
             "$container" bash /src/iso_files/build.sh
 
+          sudo buildah unmount "$container"
           sudo buildah commit "$container" "${CONTAINER_IMAGE_NAME}"
           sudo buildah rm "$container"
           echo "image_name=${CONTAINER_IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
