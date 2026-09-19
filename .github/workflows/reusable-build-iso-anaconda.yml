@@ -131,7 +131,6 @@ jobs:
           sudo buildah config --env BASE_IMAGE="${FULL_BASE_IMAGE}" "$container"
           sudo buildah run \
             --cap-add sys_admin \
-            --security-opt label=disable \
             -v /var/tmp/libdnf5-cache:/var/tmp/libdnf5 \
             "$container" bash /src/iso_files/build.sh
 
