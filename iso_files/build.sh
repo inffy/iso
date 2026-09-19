@@ -42,6 +42,7 @@ if [[ -d /run/host-containers-storage/overlay || -d /run/host-containers-storage
     echo "Copying ${TARGET_IMAGE} locally from host storage into /usr/lib/containers/storage..."
     mkdir -p /run/host-containers-storage-run /run/containers/storage /usr/lib/containers/storage
     skopeo copy \
+        --remove-signatures \
         "containers-storage:[overlay@/run/host-containers-storage+/run/host-containers-storage-run]${TARGET_IMAGE}" \
         "containers-storage:[overlay@/usr/lib/containers/storage+/run/containers/storage]${TARGET_IMAGE}"
     rm -rf /run/host-containers-storage-run
