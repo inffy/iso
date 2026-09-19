@@ -107,7 +107,7 @@ jobs:
           sudo podman build \
             --cap-add sys_admin \
             --security-opt label=disable \
-            -v /var/lib/containers/storage:/run/host-containers-storage:ro \
+            -v /var/lib/containers/storage:/run/host-containers-storage \
             --build-arg BASE_IMAGE=${BASE_IMAGE_REF}:${IMAGE_VERSION} \
             --tag "${CONTAINER_IMAGE_NAME}" \
             -f Containerfile \
