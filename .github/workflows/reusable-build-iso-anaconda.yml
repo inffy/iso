@@ -103,15 +103,35 @@ jobs:
           IMAGE_VERSION: ${{ matrix.image_version }}
           BASE_IMAGE_REF: ${{ steps.image_ref.outputs.image_ref }}
         run: |
+          set -eoux pipefail
           CONTAINER_IMAGE_NAME="aurora-live-${FLAVOR}:${IMAGE_VERSION}"
-          sudo podman build \
+          FULL_BASE_IMAGE="${BASE_IMAGE_REF}:${IMAGE_VERSION}"
+
+          container=$(sudo buildah from "${FULL_BASE_IMAGE}")
+          mountpoint=$(sudo buildah mount "$container")
+
+          # Copy base image directly on host into /usr/lib/containers/storage
+          # Running on the host avoids user namespace restrictions and lchown errors
+          sudo mkdir -p "${mountpoint}/usr/lib/containers/storage" /run/containers/storage
+          sudo skopeo copy \
+            --remove-signatures \
+            "containers-storage:${FULL_BASE_IMAGE}" \
+            "containers-storage:[overlay@${mountpoint}/usr/lib/containers/storage+/run/containers/storage]${FULL_BASE_IMAGE}"
+
+          # Copy build files into container
+          sudo cp -r iso_files "${mountpoint}/src/iso_files"
+
+          # Execute build script inside container
+          sudo mkdir -p /var/tmp/libdnf5-cache
+          sudo buildah config --env BASE_IMAGE="${FULL_BASE_IMAGE}" "$container"
+          sudo buildah run \
             --cap-add sys_admin \
             --security-opt label=disable \
-            -v /var/lib/containers/storage:/run/host-containers-storage \
-            --build-arg BASE_IMAGE=${BASE_IMAGE_REF}:${IMAGE_VERSION} \
-            --tag "${CONTAINER_IMAGE_NAME}" \
-            -f Containerfile \
-            .
+            -v /var/tmp/libdnf5-cache:/var/tmp/libdnf5 \
+            "$container" bash /src/iso_files/build.sh
+
+          sudo buildah commit "$container" "${CONTAINER_IMAGE_NAME}"
+          sudo buildah rm "$container"
           echo "image_name=${CONTAINER_IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
 
       - name: Build ISO

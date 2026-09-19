@@ -38,17 +38,11 @@ else
     TARGET_IMAGE="${IMAGE_REF}:${IMAGE_TAG}"
 fi
 
-if [[ -d /run/host-containers-storage/overlay || -d /run/host-containers-storage/vfs ]]; then
-    echo "Copying ${TARGET_IMAGE} locally from host storage into /usr/lib/containers/storage..."
-    mkdir -p /run/host-containers-storage-run /run/containers/storage /usr/lib/containers/storage
-    skopeo copy \
-        --remove-signatures \
-        "containers-storage:[overlay@/run/host-containers-storage+/run/host-containers-storage-run]${TARGET_IMAGE}" \
-        "containers-storage:[overlay@/usr/lib/containers/storage+/run/containers/storage]${TARGET_IMAGE}"
-    rm -rf /run/host-containers-storage-run
+if [[ -d /usr/lib/containers/storage/overlay || -d /usr/lib/containers/storage/vfs ]]; then
+    echo "Base image already present in /usr/lib/containers/storage."
 else
-    # Fallback to network pull if host storage was not mounted
-    echo "Host storage not mounted; falling back to podman pull over network..."
+    # Fallback to network pull if storage was not pre-populated
+    echo "Host storage not pre-populated; falling back to podman pull over network..."
     mkdir -p /etc/containers
     cat >/etc/containers/storage.conf <<'EOF'
 [storage]
