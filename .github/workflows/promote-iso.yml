@@ -42,6 +42,8 @@ jobs:
           /home/linuxbrew/.linuxbrew/bin/rclone ls R2_TEST:aurora-dl-test \
             --filter "+ *.iso" \
             --filter "+ *.iso-CHECKSUM" \
+            --filter "+ *.iso.torrent" \
+            --filter "+ *.iso.torrent-CHECKSUM" \
             --filter "- *"
           echo "::notice::Testing ISOs (*-testing-*) are listed above but will be excluded from promotion."
 
@@ -54,6 +56,8 @@ jobs:
             --filter "- *-webui-*" \
             --filter "+ *.iso" \
             --filter "+ *.iso-CHECKSUM" \
+            --filter "+ *.iso.torrent" \
+            --filter "+ *.iso.torrent-CHECKSUM" \
             --filter "- *" \
             --dry-run \
             --verbose
@@ -67,6 +71,8 @@ jobs:
             --filter "- *-webui-*" \
             --filter "+ *.iso" \
             --filter "+ *.iso-CHECKSUM" \
+            --filter "+ *.iso.torrent" \
+            --filter "+ *.iso.torrent-CHECKSUM" \
             --filter "- *" \
             --verbose \
             --progress
@@ -78,4 +84,6 @@ jobs:
           /home/linuxbrew/.linuxbrew/bin/rclone ls R2_PROD:aurora-dl \
             --filter "+ *.iso" \
             --filter "+ *.iso-CHECKSUM" \
+            --filter "+ *.iso.torrent" \
+            --filter "+ *.iso.torrent-CHECKSUM" \
             --filter "- *"
