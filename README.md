@@ -32,6 +32,10 @@ All available ISOs for download are listed here as well:
 [Production Bucket](https://dl.getaurora.dev)
 [Testing Bucket](https://dl-test.getaurora.dev)
 
+### Torrent
+
+Every ISO also has a `.torrent` file published next to it (e.g. `aurora-stable-x86_64.iso.torrent`). The torrents use the download buckets as web seeds, so they always have a seed even when no peers are online. Please keep seeding after your download finishes if you can.
+
 ## Verifying ISOs
 
 ### 1. Integrity Check (Checksum)
